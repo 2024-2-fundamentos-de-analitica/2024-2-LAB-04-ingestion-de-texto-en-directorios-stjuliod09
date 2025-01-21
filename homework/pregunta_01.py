@@ -1,9 +1,25 @@
 # pylint: disable=import-outside-toplevel
 # pylint: disable=line-too-long
 # flake8: noqa
-"""
-Escriba el codigo que ejecute la accion solicitada en cada pregunta.
-"""
+
+from glob import glob
+import pandas as pd
+import fileinput
+from random import shuffle
+import os
+
+def load_file(input_directory: str):
+    files = glob(f'{input_directory}/*')
+    with fileinput.input(files = files) as f:
+        sequence = [(input_directory.split('/')[3], line) for line in f]
+    return sequence
+
+def create_ouptput_directory(output_directory: str):
+    if os.path.exists(output_directory):
+        for file in glob(f'{output_directory}/*'):
+            os.remove(file)
+        os.rmdir(output_directory)
+    os.makedirs(output_directory)
 
 
 def pregunta_01():
@@ -71,3 +87,24 @@ def pregunta_01():
 
 
     """
+    emotions = ['positive', 'negative', 'neutral']              
+    in_path = 'files/input'                                     
+    out_path = 'files/output'                                  
+    test = []                                                   # Lista que guardará los datos del directorio test
+    train = []                                                  # Lista que guardará los datos del directorio train
+    for emotion in emotions:                                    # Se recorre cada emoción
+        test += load_file(f'{in_path}/test/{emotion}')          # A cada lista se le añaden los datos extraídos de cada archivo
+        train += load_file(f'{in_path}/train/{emotion}')        # de ambos directorios con el formato (emoción, frase)
+    shuffle(test)   # Randomizar cada lista, totalmente
+    shuffle(train)  # inncesario, pero coincide con el ejemplo
+    test_data = {'phrase': [phrase for _, phrase in test],      # Diccionarios con los datos de cada directorio
+                 'target': [emotion for emotion, _ in test]}    # para la creación de cada Dataframe
+    train_data = {'phrase': [phrase for _, phrase in train],
+                  'target': [emotion for emotion, _ in train]}
+    test_dataset = pd.DataFrame(test_data)                      # Creación de cada DataFrame
+    train_dataset = pd.DataFrame(train_data)
+    create_ouptput_directory(out_path)                          # Función para crear y limpiar el directorio de outputs
+    test_dataset.to_csv(f'{out_path}/test_dataset.csv')         # Creación de los csv a partir de cada DataFrame
+    train_dataset.to_csv(f'{out_path}/train_dataset.csv')
+
+pregunta_01()
